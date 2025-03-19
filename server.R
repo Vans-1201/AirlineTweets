@@ -2,7 +2,6 @@
 # Server logic definition
 
 server <- function(input, output) {
-  source("sentiment_functions.R") # source the file that contains all the functions.
 
   tweet_data <- shiny::reactive({
     shiny::req(input$tweet_file)
@@ -28,61 +27,38 @@ server <- function(input, output) {
 
   detailed_sentiment <- shiny::reactive({
     shiny::req(input$analyze_button)
-    analyze_sentiment(filtered_tweets())
-  })
+    tweets <- filtered_tweets()
+    if (nrow(tweets) > 0) {
+      # --- Text Preprocessing ---
+      cleaned_tweets <- tweets %>%
+        dplyr::mutate(text = stringr::str_replace_all(text, "can't", "cannot")) %>%
+        dplyr::mutate(text = stringr::str_replace_all(text, "won't", "will not"))
 
-  sentiment_words <- shiny::reactive({
-    shiny::req(input$analyze_button)
-    prepare_word_data(filtered_tweets())
-  })
+      # --- Manual Stopwords List ---
+      manual_stopwords <- c(
+        "i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours",
+        "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers",
+        "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves",
+        "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are",
+        "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does",
+        "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until",
+        "while", "of", "at", "by", "for", "with", "about", "against", "between", "into",
+        "through", "during", "before", "after", "above", "below", "to", "from", "up", "down",
+        "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here",
+        "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more",
+        "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so",
+        "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now",
+        "jetblue", "southwestair", "united", "americanair", "delta", "spiritairlines", "alaskaair" # Airline names
+      )
 
-  output$detailed_sentiment_table <- DT::renderDataTable({
-    shiny::req(input$analyze_button)
-    detailed_sentiment()
-  })
+      tweet_sentiment <- cleaned_tweets %>%
+        tidytext::unnest_tokens(word, text) %>%
+        dplyr::filter(!(word %in% manual_stopwords))
 
-  output$sentiment_bar_chart <- shiny::renderPlot({
-    shiny::req(input$analyze_button)
-    plot_sentiment_distribution(detailed_sentiment())
-  })
+      # --- Emoji Sentiment Analysis (Placeholder - requires an emoji lexicon) ---
+      # You would need to implement logic here to extract emojis and map them to sentiment scores
 
-  output$positive_wordcloud <- shiny::renderPlot({
-    shiny::req(input$analyze_button)
-    plot_positive_wordcloud(sentiment_words())
-  })
-
-  output$negative_wordcloud <- shiny::renderPlot({
-    shiny::req(input$analyze_button)
-    plot_negative_wordcloud(sentiment_words())
-  })
-
-  output$overall_sentiment_summary <- shiny::renderUI({
-    shiny::req(input$analyze_button)
-    generate_sentiment_summary(detailed_sentiment())
-  })
-
-  output$sentiment_by_airline_table <- DT::renderDataTable({
-    shiny::req(input$analyze_button)
-    generate_airline_sentiment_table(detailed_sentiment())
-  })
-
-  output$sentiment_comparison_chart <- shiny::renderPlot({
-    shiny::req(input$analyze_button)
-    plot_airline_sentiment_comparison(detailed_sentiment())
-  })
-
-  output$sentiment_confidence_histogram <- shiny::renderPlot({
-    shiny::req(input$analyze_button)
-    plot_confidence_histogram(detailed_sentiment())
-  })
-
-  output$top_positive_words <- shiny::renderPrint({
-    shiny::req(input$analyze_button)
-    print_top_positive_words(sentiment_words())
-  })
-
-  output$top_negative_words <- shiny::renderPrint({
-    shiny::req(input$analyze_button)
-    print_top_negative_words(sentiment_words())
-  })
-}
+      # --- ML-Based Sentiment Classification (Placeholder - requires labeled data and training) ---
+      # If you have a trained ML model, you would load it here and use it to predict sentiment.
+      # For now, we'll fall back to lexicon-based sentiment.
+      afinn_lexicon <- tidytext::get_sentiments("afinn
