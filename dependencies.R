@@ -3,7 +3,7 @@
 # List of required packages
 required_packages <- c("shiny", "shinydashboard", "dplyr", "ggplot2",
                        "wordcloud", "tidytext", "stringr", "tidyr",
-                       "DT", "RColorBrewer", "sentimentr")
+                       "DT", "RColorBrewer", "sentimentr", "textdata")
 
 # Function to check and install missing packages
 install_missing_packages <- function(package_list) {
