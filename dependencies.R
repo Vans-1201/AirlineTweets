@@ -21,5 +21,14 @@ for (package in required_packages) {
   }
 }
 
-# Load the packages
-lapply(required_packages, require, character.only = TRUE)
+# Load the packages explicitly
+library(shiny)
+library(shinydashboard)
+library(dplyr)
+library(ggplot2)
+library(wordcloud)
+library(tidytext)
+library(stringr)
+library(tidyr)
+library(DT)
+library(RColorBrewer)
