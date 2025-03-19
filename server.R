@@ -1,5 +1,6 @@
+# server.R
+
 library(shiny)
-library(shinydashboard)
 library(dplyr)
 library(ggplot2)
 library(wordcloud)
@@ -8,99 +9,7 @@ library(stringr)
 library(tidyr)
 library(DT)
 library(RColorBrewer)
-library(sentimentr)  # For refined sentiment analysis
-
-# Define UI for the application
-ui <- dashboardPage(
-  dashboardHeader(title = "Review Comment Sentiment Analysis"),
-  dashboardSidebar(
-    sidebarMenu(
-      menuItem("Data Input", tabName = "data_input", icon = icon("upload")),
-      menuItem("Analysis", tabName = "analysis", icon = icon("chart-bar")),
-      menuItem("Summary", tabName = "summary", icon = icon("info-circle"))
-    )
-  ),
-  dashboardBody(
-    tabItems(
-      tabItem(tabName = "data_input",
-              fluidRow(
-                box(
-                  title = "Upload Review Comments Data",
-                  width = 12,
-                  fileInput("review_file", "Choose CSV File",
-                            accept = c("text/csv",
-                                       "text/comma-separated-values,text/plain",
-                                       ".csv")),
-                  selectInput("airline_choice", "Select Airline",
-                              choices = c("All", "United", "American", "Delta", "Southwest", "JetBlue", "Spirit", "Alaska")),
-                  actionButton("analyze_button", "Run Analysis")
-                )
-              ),
-              fluidRow(
-                box(
-                  title = "Uploaded & Filtered Review Data",
-                  width = 12,
-                  dataTableOutput("review_table_raw")
-                )
-              )
-      ),
-      tabItem(tabName = "analysis",
-              fluidRow(
-                box(
-                  title = "Overall Sentiment Distribution",
-                  width = 6,
-                  plotOutput("sentiment_bar_chart")
-                ),
-                box(
-                  title = "Word Cloud of Positive Words",
-                  width = 6,
-                  plotOutput("positive_wordcloud")
-                )
-              ),
-              fluidRow(
-                box(
-                  title = "Word Cloud of Negative Words",
-                  width = 6,
-                  plotOutput("negative_wordcloud")
-                ),
-                box(
-                  title = "Detailed Review Sentiment",
-                  width = 12,
-                  dataTableOutput("detailed_sentiment_table")
-                )
-              )
-      ),
-      tabItem(tabName = "summary",
-              fluidRow(
-                box(
-                  title = "Overall Sentiment Summary",
-                  width = 12,
-                  htmlOutput("overall_sentiment_summary")
-                )
-              ),
-              fluidRow(
-                box(
-                  title = "Sentiment Confidence Score Distribution",
-                  width = 12,
-                  plotOutput("sentiment_confidence_histogram")
-                )
-              ),
-              fluidRow(
-                box(
-                  title = "Top 10 Positive Words",
-                  width = 6,
-                  verbatimTextOutput("top_positive_words")
-                ),
-                box(
-                  title = "Top 10 Negative Words",
-                  width = 6,
-                  verbatimTextOutput("top_negative_words")
-                )
-              )
-      )
-    )
-  )
-)
+library(sentimentr)
 
 # Define server logic
 server <- function(input, output) {
@@ -139,18 +48,18 @@ server <- function(input, output) {
                original_text = text,
                text = str_replace_all(text, "can't", "cannot"),
                text = str_replace_all(text, "won't", "will not"))
-      
+
       # Use sentimentr to calculate sentiment. sentiment() returns a score per sentence.
       sentiment_results <- sentiment(cleaned_reviews$original_text)
-      
+
       # Aggregate sentiment by review (assuming each review is a single text element)
       sentiment_summary <- sentiment_results %>%
         group_by(element_id) %>%
         summarise(sentiment_score = mean(sentiment))
-      
+
       # Merge the sentiment scores with the original data.
       merged_df <- merge(cleaned_reviews, sentiment_summary, by.x = "review_id", by.y = "element_id")
-      
+
       # Classify sentiment based on the adjusted thresholds.
       merged_df <- merged_df %>%
         mutate(sentiment_classification = case_when(
@@ -159,7 +68,7 @@ server <- function(input, output) {
           TRUE ~ "Neutral"
         ),
         confidence_score = abs(sentiment_score))
-      
+
       merged_df
     } else {
       NULL
@@ -211,7 +120,7 @@ server <- function(input, output) {
       sentiment_counts <- sentiment_data %>%
         group_by(sentiment_classification) %>%
         count()
-      
+
       ggplot(sentiment_counts, aes(x = sentiment_classification, y = n, fill = sentiment_classification)) +
         geom_bar(stat = "identity") +
         labs(title = "Overall Sentiment Distribution of Reviews",
@@ -236,7 +145,7 @@ server <- function(input, output) {
         count(word, wt = value) %>%
         arrange(desc(n)) %>%
         head(40)
-      
+
       if (nrow(top_positive_words_df) > 0) {
         wordcloud(words = top_positive_words_df$word, freq = top_positive_words_df$n,
                   scale = c(2, 0.5), max.words = 80, random.order = FALSE,
@@ -261,7 +170,7 @@ server <- function(input, output) {
         count(word, wt = abs(value)) %>%
         arrange(desc(n)) %>%
         head(40)
-      
+
       if (nrow(top_negative_words_df) > 0) {
         wordcloud(words = top_negative_words_df$word, freq = top_negative_words_df$n,
                   scale = c(2, 0.5), max.words = 80, random.order = FALSE,
@@ -285,11 +194,11 @@ server <- function(input, output) {
       positive_count <- sum(sentiment_data$sentiment_classification == "Positive")
       negative_count <- sum(sentiment_data$sentiment_classification == "Negative")
       neutral_count <- sum(sentiment_data$sentiment_classification == "Neutral")
-      
+
       positive_percentage <- round((positive_count / total_reviews) * 100, 2)
       negative_percentage <- round((negative_count / total_reviews) * 100, 2)
       neutral_percentage <- round((neutral_count / total_reviews) * 100, 2)
-      
+
       HTML(paste(
         "<h3>Overall Sentiment Breakdown:</h3>",
         "<p><b>Total Reviews Analyzed:</b> ", total_reviews, "</p>",
@@ -354,6 +263,3 @@ server <- function(input, output) {
     }
   })
 }
-
-# Run the application
-shinyApp(ui = ui, server = server)
