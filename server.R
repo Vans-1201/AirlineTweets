@@ -137,4 +137,4 @@ server <- function(input, output) {
         dplyr::group_by(sentiment_classification) %>%
         dplyr::count()
 
-      ggplot2::ggplot(sentiment_counts, ggplot2::aes(x = sentiment_classification,
+      ggplot2::ggplot(sentiment_counts, ggplot2::aes(x = sentiment_classification))
