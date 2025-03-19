@@ -1,36 +1,30 @@
 # dependencies.R
-# This script checks for and installs required packages.
 
-required_packages <- c(
-  "shiny",
-  "shinydashboard",
-  "dplyr",
-  "ggplot2",
-  "wordcloud",
-  "tidytext",
-  "stringr",
-  "tidyr",
-  "DT",
-  "RColorBrewer",
-  "sentimentr" # Added sentimentr package
-)
+# List of required packages
+required_packages <- c("shiny", "shinydashboard", "dplyr", "ggplot2",
+                       "wordcloud", "tidytext", "stringr", "tidyr",
+                       "DT", "RColorBrewer", "sentimentr")
 
-# Check if packages are installed, and install if not
-for (package in required_packages) {
-  if (!requireNamespace(package, quietly = TRUE)) {
-    install.packages(package)
+# Function to check and install missing packages
+install_missing_packages <- function(package_list) {
+  new_packages <- package_list[!(package_list %in% installed.packages()[,"Package"])]
+  if(length(new_packages)) {
+    install.packages(new_packages, repos = "https://cloud.r-project.org")
   }
 }
 
-# Load the packages explicitly
-library(shiny)
-library(shinydashboard)
-library(dplyr)
-library(ggplot2)
-library(wordcloud)
-library(tidytext)
-library(stringr)
-library(tidyr)
-library(DT)
-library(RColorBrewer)
-library(sentimentr) # Load sentimentr
+# Install missing packages
+install_missing_packages(required_packages)
+
+# Load required packages (optional here, can be done in ui.R and server.R as well)
+# library(shiny)
+# library(shinydashboard)
+# library(dplyr)
+# library(ggplot2)
+# library(wordcloud)
+# library(tidytext)
+# library(stringr)
+# library(tidyr)
+# library(DT)
+# library(RColorBrewer)
+# library(sentimentr)
